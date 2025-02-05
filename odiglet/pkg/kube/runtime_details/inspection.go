@@ -62,6 +62,24 @@ func runtimeInspection(ctx context.Context, pods []corev1.Pod, ignoredContainers
 					inspectProc = &proc
 					break
 				}
+				// If error exists, check for conflict or log general detection error
+				if _, ok := detectErr.(inspectors.ErrLanguageDetectionConflict); ok {
+					log.Logger.V(0).Info(
+						"Language detection conflict",
+						"pod", pod.Name,
+						"container", container.Name,
+						"namespace", pod.Namespace,
+						"error", detectErr.Error(),
+					)
+				} else {
+					log.Logger.Error(
+						detectErr,
+						"Error detecting language",
+						"pod", pod.Name,
+						"container", container.Name,
+						"namespace", pod.Namespace,
+					)
+				}
 			}
 
 			envs := make([]odigosv1.EnvVar, 0)
