@@ -11,11 +11,17 @@ import (
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/config"
+	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
+)
+
+const (
+	OdigletDaemonSetName = "odiglet"
 )
 
 func FilterAndSortProcessorsByOrderHint(processors *odigosv1.ProcessorList, collectorRole odigosv1.CollectorsGroupRole) []*odigosv1.Processor {
@@ -141,4 +147,14 @@ func fetchSourceKeysByGroups(ctx context.Context, kubeClient client.Client, grou
 	}
 
 	return sourceKeys, nil
+}
+
+func GetOdigletDaemonsetPodSpec(ctx context.Context, c client.Client, namespace string) (*corev1.PodSpec, error) {
+	odigletDaemonset := &appsv1.DaemonSet{}
+
+	if err := c.Get(ctx, client.ObjectKey{Namespace: namespace, Name: OdigletDaemonSetName}, odigletDaemonset); err != nil {
+		return nil, err
+	}
+
+	return &odigletDaemonset.Spec.Template.Spec, nil
 }

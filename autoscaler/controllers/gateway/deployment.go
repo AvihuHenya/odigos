@@ -42,9 +42,15 @@ func syncDeployment(dests *odigosv1.DestinationList, gateway *odigosv1.Collector
 		return nil, errors.Join(err, errors.New("failed to get secrets hash"))
 	}
 
+	odigletDaemonsetPodSpec, err := common.GetOdigletDaemonsetPodSpec(ctx, c, gateway.Namespace)
+	if err != nil {
+		logger.Error(err, "Failed to get Odiglet DaemonSet")
+		return nil, err
+	}
+
 	// Use the hash of the secrets  to make sure the gateway will restart when the secrets (mounted as environment variables) changes
 	configDataHash := common.Sha256Hash(secretsVersionHash)
-	desiredDeployment, err := getDesiredDeployment(dests, configDataHash, gateway, scheme, imagePullSecrets, odigosVersion)
+	desiredDeployment, err := getDesiredDeployment(dests, configDataHash, gateway, scheme, imagePullSecrets, odigosVersion, odigletDaemonsetPodSpec)
 	if err != nil {
 		return nil, errors.Join(err, errors.New("failed to get desired deployment"))
 	}
@@ -88,7 +94,8 @@ func patchDeployment(existing *appsv1.Deployment, desired *appsv1.Deployment, ct
 }
 
 func getDesiredDeployment(dests *odigosv1.DestinationList, configDataHash string,
-	gateway *odigosv1.CollectorsGroup, scheme *runtime.Scheme, imagePullSecrets []string, odigosVersion string) (*appsv1.Deployment, error) {
+	gateway *odigosv1.CollectorsGroup, scheme *runtime.Scheme, imagePullSecrets []string, odigosVersion string,
+	odigletDaemonsetPodSpec *corev1.PodSpec) (*appsv1.Deployment, error) {
 
 	// request + limits for memory and cpu
 	requestMemoryQuantity := resource.MustParse(fmt.Sprintf("%dMi", gateway.Spec.ResourcesSettings.MemoryRequestMiB))
@@ -102,6 +109,8 @@ func getDesiredDeployment(dests *odigosv1.DestinationList, configDataHash string
 	if gateway.Spec.ResourcesSettings.MinReplicas != nil {
 		gatewayReplicas = int32(*gateway.Spec.ResourcesSettings.MinReplicas)
 	}
+
+	print("NodeSelector: %v\n", odigletDaemonsetPodSpec.NodeSelector)
 
 	desiredDeployment := &appsv1.Deployment{
 		ObjectMeta: v1.ObjectMeta{
@@ -122,6 +131,7 @@ func getDesiredDeployment(dests *odigosv1.DestinationList, configDataHash string
 					},
 				},
 				Spec: corev1.PodSpec{
+					NodeSelector: odigletDaemonsetPodSpec.NodeSelector,
 					Volumes: []corev1.Volume{
 						{
 							Name: k8sconsts.OdigosClusterCollectorConfigMapKey,

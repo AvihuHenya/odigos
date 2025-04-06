@@ -30,7 +30,6 @@ const (
 	containerCommand     = "/odigosotelcol"
 	confDir              = "/conf"
 	configHashAnnotation = "odigos.io/config-hash"
-	odigletDaemonSetName = "odiglet"
 )
 
 var (
@@ -93,7 +92,7 @@ func syncDaemonSet(ctx context.Context, dests *odigosv1.DestinationList, datacol
 	c client.Client, scheme *runtime.Scheme, imagePullSecrets []string, odigosVersion string) (*appsv1.DaemonSet, error) {
 	logger := log.FromContext(ctx)
 
-	odigletDaemonsetPodSpec, err := getOdigletDaemonsetPodSpec(ctx, c, datacollection.Namespace)
+	odigletDaemonsetPodSpec, err := common.GetOdigletDaemonsetPodSpec(ctx, c, datacollection.Namespace)
 	if err != nil {
 		logger.Error(err, "Failed to get Odiglet DaemonSet")
 		return nil, err
@@ -155,16 +154,6 @@ func syncDaemonSet(ctx context.Context, dests *odigosv1.DestinationList, datacol
 	}
 
 	return updated, nil
-}
-
-func getOdigletDaemonsetPodSpec(ctx context.Context, c client.Client, namespace string) (*corev1.PodSpec, error) {
-	odigletDaemonset := &appsv1.DaemonSet{}
-
-	if err := c.Get(ctx, client.ObjectKey{Namespace: namespace, Name: odigletDaemonSetName}, odigletDaemonset); err != nil {
-		return nil, err
-	}
-
-	return &odigletDaemonset.Spec.Template.Spec, nil
 }
 
 func getDesiredDaemonSet(datacollection *odigosv1.CollectorsGroup,
