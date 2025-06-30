@@ -12,7 +12,6 @@ import (
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/common/envOverwrite"
 	"github.com/odigos-io/odigos/k8sutils/pkg/envoverwrite"
-	"github.com/odigos-io/odigos/k8sutils/pkg/installationmethod"
 
 	"github.com/odigos-io/odigos/cli/cmd/resources"
 	cmdcontext "github.com/odigos-io/odigos/cli/pkg/cmd_context"
@@ -107,21 +106,6 @@ Note: Namespaces created during Odigos CLI installation will be deleted during u
 			// This flag being used by users who want to remove instrumentation without removing the entire Odigos setup,
 			// And by cleanup jobs that runs as helm pre-uninstall hook before helm uninstall command.
 			if cmd.Flag("instrumentation-only").Changed {
-				odigosDeployment, err := client.CoreV1().ConfigMaps(ns).Get(ctx, k8sconsts.OdigosDeploymentConfigMapName, metav1.GetOptions{})
-				if err != nil && !apierrors.IsNotFound(err) {
-					fmt.Printf("\033[31mERROR\033[0m Failed to get Odigos deployment config map: %s\n", err)
-					os.Exit(1)
-				}
-				if IsOdigosHelmInstallation(odigosDeployment) {
-					// PATCH: Currently, the odigos-configuration resource has a Helm hook annotation,
-					// so it is not managed by Helm (i.e., it lacks Helm metadata labels).
-					// As a result, running `helm uninstall` does not delete this object
-					// (or the corresponding effective-config).
-					// As a workaround, we explicitly delete it here, and let helm delete all other resources.
-					uninstallOdigosConfiguration(ctx, client, ns)
-					fmt.Printf("\n\u001B[32mSUCCESS:\u001B[0m Odigos uninstalled instrumentation resources and odigos configuration ConfigMap successfuly\n")
-					return
-				}
 				fmt.Printf("\n\u001B[32mSUCCESS:\u001B[0m Odigos uninstalled instrumentation resources successfuly\n")
 				return
 			}
@@ -825,14 +809,6 @@ func uninstallOdigosConfiguration(ctx context.Context, client *kube.Client, ns s
 
 	fmt.Printf("Deleted Odigos configuration ConfigMap %s in namespace %s\n", consts.OdigosConfigurationName, ns)
 	return nil
-}
-
-func IsOdigosHelmInstallation(cm *v1.ConfigMap) bool {
-	if cm == nil {
-		return false
-	}
-	method := cm.Data[k8sconsts.OdigosDeploymentConfigMapInstallationMethodKey]
-	return installationmethod.K8sInstallationMethod(method) == installationmethod.K8sInstallationMethodHelm
 }
 
 func init() {
