@@ -255,6 +255,7 @@ odiglet:
     - operator: Exists
   affinity: {}
   # Resource configuration for the odiglet daemonset
+  # If not set, values will be populated based on the profile (size_s/m/l).
   # resources:
   #   requests:
   #     cpu: 10m
@@ -266,7 +267,7 @@ odiglet:
   # Soft memory limit for Go runtime, passed via GOMEMLIMIT env var.
   # Influences garbage collector to limit heap size and stay within memory budget.
   # Format examples: "512MiB", "2GB", "104857600" (bytes)
-  goMemLimit: "60MiB"
+  goMemLimit: "512MiB"
 
   # in some environments, such as Rancher installations, the container runtime Unix socket is not located in a standard path.
   # In these cases, you should mount the correct socket location (e.g., /var/lib/rancher/rke2/agent/containerd/containerd.sock)
@@ -309,7 +310,7 @@ gke:
   enabled: false
 
 # List of profile names (array). Example (YAML): profiles: [size_l] | (CLI): --set profiles={size_l} 
-profiles: []
+profiles: [size_l]
 
 # Optional NodeSelector to apply to all Odigos components
 # Note: Odigos will only be able to instrument workloads on the same nodes.

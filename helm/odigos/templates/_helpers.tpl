@@ -44,3 +44,34 @@ true
   {{- define "utils.cleanKubeVersion" -}}
   {{- regexReplaceAll "-.*" .Capabilities.KubeVersion.Version "" -}}
   {{- end }}
+
+
+{{- define "odigos.profileDefaults" -}}
+{{- $profile := "size_s" -}}
+{{- if and .Values.profiles (gt (len .Values.profiles) 0) -}}
+  {{- $profile = index .Values.profiles 0 -}}
+{{- end -}}
+{{- if eq $profile "size_s" }}
+  requests:
+    cpu: "150m"
+    memory: "300Mi"
+  limits:
+    cpu: "300m"
+    memory: "300Mi"
+{{- else if eq $profile "size_m" }}
+  requests:
+    cpu: "250m"
+    memory: "250Mi"
+  limits:
+    cpu: "500m"
+    memory: "500Mi"
+{{- else if eq $profile "size_l" }}
+  requests:
+    cpu: "500m"
+    memory: "500Mi"
+  limits:
+    cpu: "750m"
+    memory: "750Mi"
+{{- end }}
+{{- end }}
+

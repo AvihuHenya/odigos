@@ -124,9 +124,11 @@ spec:
             capabilities:
               add:
                 - SYS_PTRACE
-          {{- if .Values.odiglet.resources }}
           resources:
-{{ toYaml .Values.odiglet.resources | indent 12 }}
+          {{- if .Values.odiglet.resources }}
+          {{ toYaml .Values.odiglet.resources | indent 12 }}
+          {{- else }}
+          {{ include "odigos.profileDefaults" . | indent 12 }}
           {{- end }}
           livenessProbe:
             httpGet:
