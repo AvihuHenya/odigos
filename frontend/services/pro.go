@@ -1,13 +1,97 @@
 package services
 
 import (
+	"bytes"
+	"context"
+	"encoding/json"
+	"fmt"
+	"log/slog"
 	"net/http"
+	"os"
+	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/frontend/kube"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"github.com/odigos-io/odigos/k8sutils/pkg/pro"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
+
+type ReportPayload struct {
+	CustomerID   string `json:"customer_id"`
+	NodeCount    int    `json:"node_count"`
+	Timestamp    string `json:"timestamp"`
+	ReportSource string `json:"report_source"` // "UI-browser" or "component-periodic"
+}
+
+func countOdigosInstalledNodes(ctx context.Context) (int, error) {
+	labelSelector := fmt.Sprintf("%s=%s", k8sconsts.OdigletEnterpriseInstalledLabel, k8sconsts.OdigletInstalledLabelValue)
+
+	// List nodes with the specified label selector
+	nodeList, err := kube.DefaultClient.CoreV1().Nodes().List(ctx, metav1.ListOptions{
+		LabelSelector: labelSelector,
+	})
+	if err != nil {
+		return 0, fmt.Errorf("failed to list nodes with label selector '%s': %w", labelSelector, err)
+	}
+
+	return len(nodeList.Items), nil
+}
+
+func SendUsageReportToAWS(ctx context.Context, logger *slog.Logger) {
+	nodeCount, err := countOdigosInstalledNodes(ctx)
+	if err != nil {
+		logger.Error("Failed to count Kubernetes nodes for reporting", "error", err)
+		return
+	}
+
+	// Parse and validate JWT for customer_id
+	// (You'll need a JWT parsing library, e.g., github.com/golang-jwt/jwt/v5)
+	// For simplicity, let's assume customerID is extracted
+	customerID := "your-customer-id-from-jwt-or-config" // Replace with actual JWT parsing
+
+	payload := ReportPayload{
+		CustomerID:   customerID,
+		NodeCount:    nodeCount,
+		Timestamp:    time.Now().Format(time.RFC3339),
+		ReportSource: "UI-browser",
+	}
+
+	jsonPayload, err := json.Marshal(payload)
+	if err != nil {
+		logger.Error("Failed to marshal report payload", "error", err)
+		return
+	}
+
+	// **IMPORTANT:** Replace with your actual AWS API Gateway endpoint
+	awsAPIGatewayURL := os.Getenv("AWS_API_GATEWAY_URL") // Get from environment variable
+	if awsAPIGatewayURL == "" {
+		logger.Warn("AWS_API_GATEWAY_URL environment variable not set. Usage report not sent.")
+		return
+	}
+
+	req, err := http.NewRequestWithContext(ctx, "POST", awsAPIGatewayURL, bytes.NewBuffer(jsonPayload))
+	if err != nil {
+		logger.Error("Failed to create HTTP request to AWS API Gateway", "error", err)
+		return
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	client := &http.Client{Timeout: 5 * time.Second} // Add a timeout
+	resp, err := client.Do(req)
+	if err != nil {
+		logger.Error("Failed to send usage report to AWS API Gateway", "error", err)
+		return
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusAccepted {
+		logger.Error("AWS API Gateway returned non-success status", "status", resp.Status, "response", resp.Body)
+	} else {
+		logger.Info("Usage report sent successfully to AWS API Gateway", "nodeCount", nodeCount)
+	}
+}
 
 func UpdateToken(c *gin.Context) {
 	var request pro.TokenPayload
