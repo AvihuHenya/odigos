@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"os"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -53,7 +52,7 @@ func SendUsageReportToAWS(ctx context.Context) {
 	// Parse and validate JWT for customer_id
 	// (You'll need a JWT parsing library, e.g., github.com/golang-jwt/jwt/v5)
 	// For simplicity, let's assume customerID is extracted
-	customerID := "your-customer-id-from-jwt-or-config" // Replace with actual JWT parsing
+	customerID := "avihu" // Replace with actual JWT parsing
 
 	payload := ReportPayload{
 		CustomerID:       customerID,
@@ -71,13 +70,13 @@ func SendUsageReportToAWS(ctx context.Context) {
 
 	// todo: do we need to save it in secret
 	// **IMPORTANT:** Replace with your actual AWS API Gateway endpoint
-	awsAPIGatewayURL := os.Getenv("AWS_API_GATEWAY_URL") // Get from environment variable
-	if awsAPIGatewayURL == "" {
-		log.Println("AWS_API_GATEWAY_URL environment variable not set. Usage report not sent.")
-		return
-	}
+	// awsAPIGatewayURL := os.Getenv("AWS_API_GATEWAY_URL") // Get from environment variable
+	// if awsAPIGatewayURL == "" {
+	// 	log.Println("AWS_API_GATEWAY_URL environment variable not set. Usage report not sent.")
+	// 	return
+	// }
 
-	req, err := http.NewRequestWithContext(ctx, "POST", awsAPIGatewayURL, bytes.NewBuffer(jsonPayload))
+	req, err := http.NewRequestWithContext(ctx, "POST", "https://39er97hl30.execute-api.us-east-1.amazonaws.com", bytes.NewBuffer(jsonPayload))
 	if err != nil {
 		log.Println("Failed to create HTTP request to AWS API Gateway", "error", err)
 		return
@@ -95,7 +94,27 @@ func SendUsageReportToAWS(ctx context.Context) {
 	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusAccepted {
 		log.Println("AWS API Gateway returned non-success status", "status", resp.Status, "response", resp.Body)
 	} else {
-		log.Println("Usage report sent successfully to AWS API Gateway", "nodeCount", nodeCount)
+		log.Println("Usage report sent successfully to AWS API Gateway", "nodeCount", totalNodesCount)
+	}
+}
+
+func periodicReport(ctx context.Context) {
+	ticker := time.NewTicker(24 * time.Hour)
+	defer ticker.Stop()
+
+	// Run immediately at startup
+	log.Println("Sending initial usage report...")
+	SendUsageReportToAWS(ctx)
+
+	for {
+		select {
+		case <-ctx.Done():
+			log.Println("Usage reporting goroutine shutting down...")
+			return
+		case <-ticker.C:
+			log.Println("Sending scheduled usage report...")
+			SendUsageReportToAWS(ctx)
+		}
 	}
 }
 
