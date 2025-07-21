@@ -5,7 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log/slog"
+	"log"
 	"net/http"
 	"os"
 	"time"
@@ -19,30 +19,34 @@ import (
 )
 
 type ReportPayload struct {
-	CustomerID   string `json:"customer_id"`
-	NodeCount    int    `json:"node_count"`
-	Timestamp    string `json:"timestamp"`
-	ReportSource string `json:"report_source"` // "UI-browser" or "component-periodic"
+	CustomerID       string `json:"customer_id"`
+	TotalNodesCount  int    `json:"node_count"`
+	LabeledNodeCount int    `json:"labeled_node_count"`
+	Timestamp        string `json:"timestamp"`
+	ReportSource     string `json:"report_source"` // "UI-browser" or "component-periodic"
 }
 
-func countOdigosInstalledNodes(ctx context.Context) (int, error) {
-	labelSelector := fmt.Sprintf("%s=%s", k8sconsts.OdigletEnterpriseInstalledLabel, k8sconsts.OdigletInstalledLabelValue)
-
-	// List nodes with the specified label selector
-	nodeList, err := kube.DefaultClient.CoreV1().Nodes().List(ctx, metav1.ListOptions{
-		LabelSelector: labelSelector,
-	})
+func countNodesInfo(ctx context.Context) (totalNodesCount int, labeledNodeCount int, err error) {
+	// List all nodes (no label selector)
+	nodeList, err := kube.DefaultClient.CoreV1().Nodes().List(ctx, metav1.ListOptions{})
 	if err != nil {
-		return 0, fmt.Errorf("failed to list nodes with label selector '%s': %w", labelSelector, err)
+		return 0, 0, fmt.Errorf("failed to list nodes: %w", err)
 	}
 
-	return len(nodeList.Items), nil
+	// Count how many nodes have the desired label
+	for _, node := range nodeList.Items {
+		if val, ok := node.Labels[k8sconsts.OdigletEnterpriseInstalledLabel]; ok && val == k8sconsts.OdigletInstalledLabelValue {
+			labeledNodeCount++
+		}
+	}
+
+	return len(nodeList.Items), labeledNodeCount, nil
 }
 
-func SendUsageReportToAWS(ctx context.Context, logger *slog.Logger) {
-	nodeCount, err := countOdigosInstalledNodes(ctx)
+func SendUsageReportToAWS(ctx context.Context) {
+	totalNodesCount, labeledNodeCount, err := countNodesInfo(ctx)
 	if err != nil {
-		logger.Error("Failed to count Kubernetes nodes for reporting", "error", err)
+		log.Fatal("Failed to count Kubernetes nodes for reporting", "error", err)
 		return
 	}
 
@@ -52,28 +56,30 @@ func SendUsageReportToAWS(ctx context.Context, logger *slog.Logger) {
 	customerID := "your-customer-id-from-jwt-or-config" // Replace with actual JWT parsing
 
 	payload := ReportPayload{
-		CustomerID:   customerID,
-		NodeCount:    nodeCount,
-		Timestamp:    time.Now().Format(time.RFC3339),
-		ReportSource: "UI-browser",
+		CustomerID:       customerID,
+		TotalNodesCount:  totalNodesCount,
+		LabeledNodeCount: labeledNodeCount,
+		Timestamp:        time.Now().Format(time.RFC3339),
+		ReportSource:     "UI-browser",
 	}
 
 	jsonPayload, err := json.Marshal(payload)
 	if err != nil {
-		logger.Error("Failed to marshal report payload", "error", err)
+		log.Fatal("Failed to marshal report payload", "error", err)
 		return
 	}
 
+	// todo: do we need to save it in secret
 	// **IMPORTANT:** Replace with your actual AWS API Gateway endpoint
 	awsAPIGatewayURL := os.Getenv("AWS_API_GATEWAY_URL") // Get from environment variable
 	if awsAPIGatewayURL == "" {
-		logger.Warn("AWS_API_GATEWAY_URL environment variable not set. Usage report not sent.")
+		log.Println("AWS_API_GATEWAY_URL environment variable not set. Usage report not sent.")
 		return
 	}
 
 	req, err := http.NewRequestWithContext(ctx, "POST", awsAPIGatewayURL, bytes.NewBuffer(jsonPayload))
 	if err != nil {
-		logger.Error("Failed to create HTTP request to AWS API Gateway", "error", err)
+		log.Println("Failed to create HTTP request to AWS API Gateway", "error", err)
 		return
 	}
 	req.Header.Set("Content-Type", "application/json")
@@ -81,15 +87,15 @@ func SendUsageReportToAWS(ctx context.Context, logger *slog.Logger) {
 	client := &http.Client{Timeout: 5 * time.Second} // Add a timeout
 	resp, err := client.Do(req)
 	if err != nil {
-		logger.Error("Failed to send usage report to AWS API Gateway", "error", err)
+		log.Println("Failed to send usage report to AWS API Gateway", "error", err)
 		return
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusAccepted {
-		logger.Error("AWS API Gateway returned non-success status", "status", resp.Status, "response", resp.Body)
+		log.Println("AWS API Gateway returned non-success status", "status", resp.Status, "response", resp.Body)
 	} else {
-		logger.Info("Usage report sent successfully to AWS API Gateway", "nodeCount", nodeCount)
+		log.Println("Usage report sent successfully to AWS API Gateway", "nodeCount", nodeCount)
 	}
 }
 
