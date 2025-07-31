@@ -215,6 +215,12 @@ func NewUIRole(ns string, readonly bool) *rbacv1.Role {
 				Resources: []string{"secrets"},
 				Verbs:     []string{"get", "list", "create", "patch", "update", "delete"},
 			},
+			{ // Needed to get odigos usage details
+				APIGroups: []string{""},
+				Resources: []string{"nodes"},
+				Verbs:     []string{"list"},
+
+			},
 			{ // Needed for CRUD on instr. rule and destinations
 				APIGroups: []string{"odigos.io"},
 				Resources: []string{"instrumentationrules", "destinations"},

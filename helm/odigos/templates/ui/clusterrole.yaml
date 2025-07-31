@@ -29,6 +29,12 @@ rules:
       - patch
       {{- end }}
   - apiGroups:
+      - ''
+    resources:
+      - nodes
+    verbs:
+      - list
+  - apiGroups:
       - batch
     resources:
       - cronjobs
