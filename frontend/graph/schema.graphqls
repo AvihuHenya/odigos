@@ -794,6 +794,14 @@ type ServiceMapToSource {
   dateTime: String!
 }
 
+type OdigosUsage {
+  customerID: String!
+  totalNodesCount: Int!
+  labeledNodeCount: Int!
+  timestamp: String!
+  ReportSource: String!
+}
+
 type Query {
   computePlatform: ComputePlatform
   config: GetConfigResponse
@@ -804,6 +812,7 @@ type Query {
   describeOdigos: OdigosAnalyze!
   describeSource(namespace: String!, kind: String!, name: String!): SourceAnalyze!
   sourceConditions: [SourceConditions!]!
+  getOdigosUsage: OdigosUsage!
 }
 
 type Mutation {

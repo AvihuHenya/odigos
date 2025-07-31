@@ -1203,6 +1203,11 @@ func (r *queryResolver) SourceConditions(ctx context.Context) ([]*model.SourceCo
 	return services.GetOtherConditionsForSources(ctx, "", "", "")
 }
 
+// GetOdigosUsage is the resolver for the getOdigosUsage field.
+func (r *queryResolver) GetOdigosUsage(ctx context.Context) (*model.OdigosUsage, error) {
+	return services.SendUsageDetailes(ctx), nil
+}
+
 // ComputePlatform returns ComputePlatformResolver implementation.
 func (r *Resolver) ComputePlatform() ComputePlatformResolver { return &computePlatformResolver{r} }
 

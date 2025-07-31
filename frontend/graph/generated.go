@@ -423,6 +423,14 @@ type ComplexityRoot struct {
 		Tier                 func(childComplexity int) int
 	}
 
+	OdigosUsage struct {
+		CustomerID       func(childComplexity int) int
+		LabeledNodeCount func(childComplexity int) int
+		ReportSource     func(childComplexity int) int
+		Timestamp        func(childComplexity int) int
+		TotalNodesCount  func(childComplexity int) int
+	}
+
 	OtelAgentsAnalyze struct {
 		Containers func(childComplexity int) int
 		CreateTime func(childComplexity int) int
@@ -507,6 +515,7 @@ type ComplexityRoot struct {
 		DescribeOdigos        func(childComplexity int) int
 		DescribeSource        func(childComplexity int, namespace string, kind string, name string) int
 		DestinationCategories func(childComplexity int) int
+		GetOdigosUsage        func(childComplexity int) int
 		GetOverviewMetrics    func(childComplexity int) int
 		GetServiceMap         func(childComplexity int) int
 		PotentialDestinations func(childComplexity int) int
@@ -675,6 +684,7 @@ type QueryResolver interface {
 	DescribeOdigos(ctx context.Context) (*model.OdigosAnalyze, error)
 	DescribeSource(ctx context.Context, namespace string, kind string, name string) (*model.SourceAnalyze, error)
 	SourceConditions(ctx context.Context) ([]*model.SourceConditions, error)
+	GetOdigosUsage(ctx context.Context) (*model.OdigosUsage, error)
 }
 
 type executableSchema struct {
@@ -2427,6 +2437,41 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.OdigosAnalyze.Tier(childComplexity), true
 
+	case "OdigosUsage.customerID":
+		if e.complexity.OdigosUsage.CustomerID == nil {
+			break
+		}
+
+		return e.complexity.OdigosUsage.CustomerID(childComplexity), true
+
+	case "OdigosUsage.labeledNodeCount":
+		if e.complexity.OdigosUsage.LabeledNodeCount == nil {
+			break
+		}
+
+		return e.complexity.OdigosUsage.LabeledNodeCount(childComplexity), true
+
+	case "OdigosUsage.ReportSource":
+		if e.complexity.OdigosUsage.ReportSource == nil {
+			break
+		}
+
+		return e.complexity.OdigosUsage.ReportSource(childComplexity), true
+
+	case "OdigosUsage.timestamp":
+		if e.complexity.OdigosUsage.Timestamp == nil {
+			break
+		}
+
+		return e.complexity.OdigosUsage.Timestamp(childComplexity), true
+
+	case "OdigosUsage.totalNodesCount":
+		if e.complexity.OdigosUsage.TotalNodesCount == nil {
+			break
+		}
+
+		return e.complexity.OdigosUsage.TotalNodesCount(childComplexity), true
+
 	case "OtelAgentsAnalyze.containers":
 		if e.complexity.OtelAgentsAnalyze.Containers == nil {
 			break
@@ -2781,6 +2826,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.DestinationCategories(childComplexity), true
+
+	case "Query.getOdigosUsage":
+		if e.complexity.Query.GetOdigosUsage == nil {
+			break
+		}
+
+		return e.complexity.Query.GetOdigosUsage(childComplexity), true
 
 	case "Query.getOverviewMetrics":
 		if e.complexity.Query.GetOverviewMetrics == nil {
@@ -15564,6 +15616,226 @@ func (ec *executionContext) fieldContext_OdigosAnalyze_hasErrors(_ context.Conte
 	return fc, nil
 }
 
+func (ec *executionContext) _OdigosUsage_customerID(ctx context.Context, field graphql.CollectedField, obj *model.OdigosUsage) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_OdigosUsage_customerID(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CustomerID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_OdigosUsage_customerID(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "OdigosUsage",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _OdigosUsage_totalNodesCount(ctx context.Context, field graphql.CollectedField, obj *model.OdigosUsage) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_OdigosUsage_totalNodesCount(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TotalNodesCount, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_OdigosUsage_totalNodesCount(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "OdigosUsage",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _OdigosUsage_labeledNodeCount(ctx context.Context, field graphql.CollectedField, obj *model.OdigosUsage) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_OdigosUsage_labeledNodeCount(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.LabeledNodeCount, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_OdigosUsage_labeledNodeCount(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "OdigosUsage",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _OdigosUsage_timestamp(ctx context.Context, field graphql.CollectedField, obj *model.OdigosUsage) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_OdigosUsage_timestamp(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Timestamp, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_OdigosUsage_timestamp(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "OdigosUsage",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _OdigosUsage_ReportSource(ctx context.Context, field graphql.CollectedField, obj *model.OdigosUsage) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_OdigosUsage_ReportSource(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ReportSource, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_OdigosUsage_ReportSource(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "OdigosUsage",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _OtelAgentsAnalyze_created(ctx context.Context, field graphql.CollectedField, obj *model.OtelAgentsAnalyze) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_OtelAgentsAnalyze_created(ctx, field)
 	if err != nil {
@@ -18215,6 +18487,62 @@ func (ec *executionContext) fieldContext_Query_sourceConditions(_ context.Contex
 				return ec.fieldContext_SourceConditions_conditions(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type SourceConditions", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_getOdigosUsage(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_getOdigosUsage(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().GetOdigosUsage(rctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.OdigosUsage)
+	fc.Result = res
+	return ec.marshalNOdigosUsage2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐOdigosUsage(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_getOdigosUsage(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "customerID":
+				return ec.fieldContext_OdigosUsage_customerID(ctx, field)
+			case "totalNodesCount":
+				return ec.fieldContext_OdigosUsage_totalNodesCount(ctx, field)
+			case "labeledNodeCount":
+				return ec.fieldContext_OdigosUsage_labeledNodeCount(ctx, field)
+			case "timestamp":
+				return ec.fieldContext_OdigosUsage_timestamp(ctx, field)
+			case "ReportSource":
+				return ec.fieldContext_OdigosUsage_ReportSource(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type OdigosUsage", field.Name)
 		},
 	}
 	return fc, nil
@@ -27438,6 +27766,65 @@ func (ec *executionContext) _OdigosAnalyze(ctx context.Context, sel ast.Selectio
 	return out
 }
 
+var odigosUsageImplementors = []string{"OdigosUsage"}
+
+func (ec *executionContext) _OdigosUsage(ctx context.Context, sel ast.SelectionSet, obj *model.OdigosUsage) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, odigosUsageImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("OdigosUsage")
+		case "customerID":
+			out.Values[i] = ec._OdigosUsage_customerID(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "totalNodesCount":
+			out.Values[i] = ec._OdigosUsage_totalNodesCount(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "labeledNodeCount":
+			out.Values[i] = ec._OdigosUsage_labeledNodeCount(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "timestamp":
+			out.Values[i] = ec._OdigosUsage_timestamp(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "ReportSource":
+			out.Values[i] = ec._OdigosUsage_ReportSource(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var otelAgentsAnalyzeImplementors = []string{"OtelAgentsAnalyze"}
 
 func (ec *executionContext) _OtelAgentsAnalyze(ctx context.Context, sel ast.SelectionSet, obj *model.OtelAgentsAnalyze) graphql.Marshaler {
@@ -28185,6 +28572,28 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_sourceConditions(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "getOdigosUsage":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_getOdigosUsage(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}
@@ -30799,6 +31208,20 @@ func (ec *executionContext) marshalNOdigosAnalyze2ᚖgithubᚗcomᚋodigosᚑio�
 		return graphql.Null
 	}
 	return ec._OdigosAnalyze(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNOdigosUsage2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐOdigosUsage(ctx context.Context, sel ast.SelectionSet, v model.OdigosUsage) graphql.Marshaler {
+	return ec._OdigosUsage(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNOdigosUsage2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐOdigosUsage(ctx context.Context, sel ast.SelectionSet, v *model.OdigosUsage) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._OdigosUsage(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNOtelAgentsAnalyze2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐOtelAgentsAnalyze(ctx context.Context, sel ast.SelectionSet, v *model.OtelAgentsAnalyze) graphql.Marshaler {

@@ -562,6 +562,14 @@ type OdigosAnalyze struct {
 	HasErrors            bool                     `json:"hasErrors"`
 }
 
+type OdigosUsage struct {
+	CustomerID       string `json:"customerID"`
+	TotalNodesCount  int    `json:"totalNodesCount"`
+	LabeledNodeCount int    `json:"labeledNodeCount"`
+	Timestamp        string `json:"timestamp"`
+	ReportSource     string `json:"ReportSource"`
+}
+
 type OtelAgentsAnalyze struct {
 	Created    *EntityProperty                `json:"created"`
 	CreateTime *EntityProperty                `json:"createTime,omitempty"`

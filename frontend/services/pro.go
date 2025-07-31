@@ -5,10 +5,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"time"
-
+	"github.com/odigos-io/odigos/frontend/graph/model"
 	"github.com/gin-gonic/gin"
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/frontend/kube"
@@ -17,13 +18,13 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-type ReportPayload struct {
-	CustomerID       string `json:"customer_id"`
-	TotalNodesCount  int    `json:"node_count"`
-	LabeledNodeCount int    `json:"labeled_node_count"`
-	Timestamp        string `json:"timestamp"`
-	ReportSource     string `json:"report_source"` // "UI-browser" or "component-periodic"
-}
+// type ReportPayload struct {
+// 	CustomerID       string `json:"customer_id"`
+// 	TotalNodesCount  int    `json:"node_count"`
+// 	LabeledNodeCount int    `json:"labeled_node_count"`
+// 	Timestamp        string `json:"timestamp"`
+// 	ReportSource     string `json:"report_source"` // "UI-browser" or "component-periodic"
+// }
 
 func countNodesInfo(ctx context.Context) (totalNodesCount int, labeledNodeCount int, err error) {
 	// List all nodes (no label selector)
@@ -42,11 +43,11 @@ func countNodesInfo(ctx context.Context) (totalNodesCount int, labeledNodeCount 
 	return len(nodeList.Items), labeledNodeCount, nil
 }
 
-func SendUsageReportToAWS(ctx context.Context) {
+func SendUsageDetailes(ctx context.Context) *model.OdigosUsage {
 	totalNodesCount, labeledNodeCount, err := countNodesInfo(ctx)
 	if err != nil {
 		log.Fatal("Failed to count Kubernetes nodes for reporting", "error", err)
-		return
+		return nil
 	}
 
 	// Parse and validate JWT for customer_id
@@ -54,7 +55,7 @@ func SendUsageReportToAWS(ctx context.Context) {
 	// For simplicity, let's assume customerID is extracted
 	customerID := "avihu" // Replace with actual JWT parsing
 
-	payload := ReportPayload{
+	payload := &model.OdigosUsage{
 		CustomerID:       customerID,
 		TotalNodesCount:  totalNodesCount,
 		LabeledNodeCount: labeledNodeCount,
@@ -64,8 +65,8 @@ func SendUsageReportToAWS(ctx context.Context) {
 
 	jsonPayload, err := json.Marshal(payload)
 	if err != nil {
-		log.Fatal("Failed to marshal report payload", "error", err)
-		return
+		log.Println("Failed to marshal report payload", "error", err)
+		return nil
 	}
 
 	// todo: do we need to save it in secret
@@ -79,7 +80,7 @@ func SendUsageReportToAWS(ctx context.Context) {
 	req, err := http.NewRequestWithContext(ctx, "POST", "https://39er97hl30.execute-api.us-east-1.amazonaws.com", bytes.NewBuffer(jsonPayload))
 	if err != nil {
 		log.Println("Failed to create HTTP request to AWS API Gateway", "error", err)
-		return
+		return nil
 	}
 	req.Header.Set("Content-Type", "application/json")
 
@@ -87,36 +88,39 @@ func SendUsageReportToAWS(ctx context.Context) {
 	resp, err := client.Do(req)
 	if err != nil {
 		log.Println("Failed to send usage report to AWS API Gateway", "error", err)
-		return
+		return nil
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusAccepted {
-		log.Println("AWS API Gateway returned non-success status", "status", resp.Status, "response", resp.Body)
+		bodyBytes, _ := io.ReadAll(resp.Body)
+		log.Println("AWS API Gateway returned non-success status", "status", resp.Status, "response", string(bodyBytes))
 	} else {
 		log.Println("Usage report sent successfully to AWS API Gateway", "nodeCount", totalNodesCount)
 	}
+
+	return payload
 }
 
-func periodicReport(ctx context.Context) {
-	ticker := time.NewTicker(24 * time.Hour)
-	defer ticker.Stop()
+// func PeriodicReport(ctx context.Context) {
+// 	ticker := time.NewTicker(24 * time.Hour)
+// 	defer ticker.Stop()
 
-	// Run immediately at startup
-	log.Println("Sending initial usage report...")
-	SendUsageReportToAWS(ctx)
+// 	// Run immediately at startup
+// 	log.Println("Sending initial usage report...")
+// 	SendUsageReport(ctx)
 
-	for {
-		select {
-		case <-ctx.Done():
-			log.Println("Usage reporting goroutine shutting down...")
-			return
-		case <-ticker.C:
-			log.Println("Sending scheduled usage report...")
-			SendUsageReportToAWS(ctx)
-		}
-	}
-}
+// 	for {
+// 		select {
+// 		case <-ctx.Done():
+// 			log.Println("Usage reporting goroutine shutting down...")
+// 			return
+// 		case <-ticker.C:
+// 			log.Println("Sending scheduled usage report...")
+// 			SendUsageReportToAWS(ctx)
+// 		}
+// 	}
+// }
 
 func UpdateToken(c *gin.Context) {
 	var request pro.TokenPayload
