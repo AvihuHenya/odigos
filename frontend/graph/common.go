@@ -33,7 +33,7 @@ func GetGQLHandler(ctx context.Context, logger logr.Logger, odigosMetrics *colle
 	return srv
 }
 
-func extractJWTPayload(token string) (map[string]interface{}, error) {
+func ExtractJWTPayload(token string) (map[string]interface{}, error) {
 	parts := strings.Split(token, ".")
 	if len(parts) != 3 {
 		return nil, fmt.Errorf("invalid JWT token format")

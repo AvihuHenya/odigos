@@ -9,9 +9,11 @@ import (
 	"log"
 	"net/http"
 	"time"
-	"github.com/odigos-io/odigos/frontend/graph/model"
+
 	"github.com/gin-gonic/gin"
 	"github.com/odigos-io/odigos/api/k8sconsts"
+	"github.com/odigos-io/odigos/frontend/graph"
+	"github.com/odigos-io/odigos/frontend/graph/model"
 	"github.com/odigos-io/odigos/frontend/kube"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"github.com/odigos-io/odigos/k8sutils/pkg/pro"
@@ -50,13 +52,36 @@ func SendUsageDetailes(ctx context.Context) *model.OdigosUsage {
 		return nil
 	}
 
+	ns := env.GetCurrentNamespace()
+	secret, err := kube.DefaultClient.CoreV1().Secrets(ns).Get(ctx, k8sconsts.OdigosProSecretName, metav1.GetOptions{})
+	if err != nil {
+		// Todo
+		return nil
+	}
+
+	tokenBytes, ok := secret.Data["token"]
+	if !ok {
+		log.Println("Token not found in Odigos Pro secret")
+		return nil
+	}
+
+	payload, err := graph.ExtractJWTPayload(string(tokenBytes))
+	if err != nil {
+		log.Println("Failed to extract JWT payload from token", "error", err)
+		return nil
+	}
+
+	iss, _ := payload["iss"].(string)
+	sub, _ := payload["sub"].(string)
+	aud, _ := payload["aud"].(string)
+
 	// Parse and validate JWT for customer_id
 	// (You'll need a JWT parsing library, e.g., github.com/golang-jwt/jwt/v5)
 	// For simplicity, let's assume customerID is extracted
 	customerID := "avihu" // Replace with actual JWT parsing
 
 	payload := &model.OdigosUsage{
-		CustomerID:       customerID,
+		CustomerID:       aud,
 		TotalNodesCount:  totalNodesCount,
 		LabeledNodeCount: labeledNodeCount,
 		Timestamp:        time.Now().Format(time.RFC3339),
